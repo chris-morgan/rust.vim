@@ -149,36 +149,36 @@ let b:undo_ftplugin = "
             \ setlocal formatoptions< comments< commentstring< include< includeexpr< suffixesadd<
             \|if exists('b:rust_set_style')
                 \|setlocal tabstop< shiftwidth< softtabstop< expandtab< textwidth<
-                \|endif
-                \|if exists('b:rust_original_delimitMate_excluded_regions')
-                    \|let b:delimitMate_excluded_regions = b:rust_original_delimitMate_excluded_regions
-                    \|unlet b:rust_original_delimitMate_excluded_regions
-                    \|else
-                        \|unlet! b:delimitMate_excluded_regions
-                        \|endif
-                        \|if exists('b:rust_set_foldmethod')
-                            \|setlocal foldmethod< foldlevel<
-                            \|unlet b:rust_set_foldmethod
-                            \|endif
-                            \|if exists('b:rust_set_conceallevel')
-                                \|setlocal conceallevel<
-                                \|unlet b:rust_set_conceallevel
-                                \|endif
-                                \|unlet! b:rust_last_rustc_args b:rust_last_args
-                                \|delcommand RustRun
-                                \|delcommand RustExpand
-                                \|delcommand RustEmitIr
-                                \|delcommand RustEmitAsm
-                                \|delcommand RustPlay
-                                \|nunmap <buffer> [[
-                                \|nunmap <buffer> ]]
-                                \|xunmap <buffer> [[
-                                \|xunmap <buffer> ]]
-                                \|ounmap <buffer> [[
-                                \|ounmap <buffer> ]]
-                                \|setlocal matchpairs-=<:>
-                                \|unlet b:match_skip
-                                \"
+            \|endif
+            \|if exists('b:rust_original_delimitMate_excluded_regions')
+                \|let b:delimitMate_excluded_regions = b:rust_original_delimitMate_excluded_regions
+                \|unlet b:rust_original_delimitMate_excluded_regions
+            \|else
+                \|unlet! b:delimitMate_excluded_regions
+            \|endif
+            \|if exists('b:rust_set_foldmethod')
+                \|setlocal foldmethod< foldlevel<
+                \|unlet b:rust_set_foldmethod
+            \|endif
+            \|if exists('b:rust_set_conceallevel')
+                \|setlocal conceallevel<
+                \|unlet b:rust_set_conceallevel
+            \|endif
+            \|unlet! b:rust_last_rustc_args b:rust_last_args
+            \|delcommand RustRun
+            \|delcommand RustExpand
+            \|delcommand RustEmitIr
+            \|delcommand RustEmitAsm
+            \|delcommand RustPlay
+            \|nunmap <buffer> [[
+            \|nunmap <buffer> ]]
+            \|xunmap <buffer> [[
+            \|xunmap <buffer> ]]
+            \|ounmap <buffer> [[
+            \|ounmap <buffer> ]]
+            \|setlocal matchpairs-=<:>
+            \|unlet b:match_skip
+            \"
 
 " }}}1
 
