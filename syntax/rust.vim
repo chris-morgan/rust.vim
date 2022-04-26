@@ -151,7 +151,8 @@ syn region    rustString      matchgroup=rustStringDelimiter start='b\?r\z(#*\)"
 
 " Match attributes with either arbitrary syntax or special highlighting for
 " derives. We still highlight strings and comments inside of the attribute.
-syn region    rustAttribute   start="#!\?\[" end="\]" contains=@rustAttributeContents,rustAttributeParenthesizedParens,rustAttributeParenthesizedCurly,rustAttributeParenthesizedBrackets,rustDerive
+syn region    rustAttributeInner   start="#!\[" end="\]" contains=@rustAttributeContents,rustAttributeParenthesizedParens,rustAttributeParenthesizedCurly,rustAttributeParenthesizedBrackets,rustDerive
+syn region    rustAttributeOuter   start="#\[" end="\]" contains=@rustAttributeContents,rustAttributeParenthesizedParens,rustAttributeParenthesizedCurly,rustAttributeParenthesizedBrackets,rustDerive fold
 syn region    rustAttributeParenthesizedParens matchgroup=rustAttribute start="\w\%(\w\)*("rs=e end=")"re=s transparent contained contains=rustAttributeBalancedParens,@rustAttributeContents
 syn region    rustAttributeParenthesizedCurly matchgroup=rustAttribute start="\w\%(\w\)*{"rs=e end="}"re=s transparent contained contains=rustAttributeBalancedCurly,@rustAttributeContents
 syn region    rustAttributeParenthesizedBrackets matchgroup=rustAttribute start="\w\%(\w\)*\["rs=e end="\]"re=s transparent contained contains=rustAttributeBalancedBrackets,@rustAttributeContents
@@ -208,10 +209,12 @@ syn match   rustCharacter   /'\([^\\]\|\\\(.\|x\x\{2}\|u{\%(\x_*\)\{1,6}}\)\)'/ 
 
 syn match rustShebang /\%^#![^[].*/
 syn region rustCommentLine                                                  start="//"                      end="$"   contains=rustTodo,@Spell
-syn region rustCommentLineDoc                                               start="//\%(//\@!\|!\)"         end="$"   contains=rustTodo,@Spell
+syn region rustCommentLineDocInner                                          start="//!"                     end="$"   contains=rustTodo,@Spell
+syn region rustCommentLineDocOuter                                          start="////\@!"                 end="$"   contains=rustTodo,@Spell fold
 syn region rustCommentLineDocError                                          start="//\%(//\@!\|!\)"         end="$"   contains=rustTodo,@Spell contained
 syn region rustCommentBlock             matchgroup=rustCommentBlock         start="/\*\%(!\|\*[*/]\@!\)\@!" end="\*/" contains=rustTodo,rustCommentBlockNest,@Spell
-syn region rustCommentBlockDoc          matchgroup=rustCommentBlockDoc      start="/\*\%(!\|\*[*/]\@!\)"    end="\*/" contains=rustTodo,rustCommentBlockDocNest,rustCommentBlockDocRustCode,@Spell
+syn region rustCommentBlockDocInner     matchgroup=rustCommentBlockDoc      start="/\*!"                    end="\*/" contains=rustTodo,rustCommentBlockDocNest,rustCommentBlockDocRustCode,rustCommentBlockDocTomlCode,@Spell
+syn region rustCommentBlockDocOuter     matchgroup=rustCommentBlockDoc      start="/\*\*[*/]\@!"            end="\*/" contains=rustTodo,rustCommentBlockDocNest,rustCommentBlockDocRustCode,rustCommentBlockDocTomlCode,@Spell fold
 syn region rustCommentBlockDocError     matchgroup=rustCommentBlockDocError start="/\*\%(!\|\*[*/]\@!\)"    end="\*/" contains=rustTodo,rustCommentBlockDocNestError,@Spell contained
 syn region rustCommentBlockNest         matchgroup=rustCommentBlock         start="/\*"                     end="\*/" contains=rustTodo,rustCommentBlockNest,@Spell contained transparent
 syn region rustCommentBlockDocNest      matchgroup=rustCommentBlockDoc      start="/\*"                     end="\*/" contains=rustTodo,rustCommentBlockDocNest,@Spell contained transparent
@@ -266,7 +269,7 @@ if !exists("b:current_syntax_embed")
     " highlighted at all. In the future, we can do as vim-markdown does and
     " highlight with the other syntax. But for now, let's make sure we find
     " the closing block marker, because the rules below won't catch it.
-    syn region rustCommentLinesDocNonRustCode matchgroup=rustCommentDocCodeFence start='^\z(\s*//[!/]\s*```\).\+$' end='^\z1$' keepend contains=rustCommentLineDoc
+    syn region rustCommentLinesDocNonRustCode matchgroup=rustCommentDocCodeFence start='^\z(\s*//[!/]\s*```\).\+$' end='^\z1$' keepend contains=rustCommentLineDocInner,rustCommentLineDocOuter
 
     " We borrow the rules from rust’s src/librustdoc/html/markdown.rs, so that
     " we only highlight as Rust what it would perceive as Rust (almost; it’s
@@ -343,10 +346,14 @@ hi def link rustFuncCall      Function
 hi def link rustShebang       Comment
 hi def link rustCommentLine   Comment
 hi def link rustCommentLineDoc SpecialComment
+hi def link rustCommentLineDocInner rustCommentLineDoc
+hi def link rustCommentLineDocOuter rustCommentLineDoc
 hi def link rustCommentLineDocLeader rustCommentLineDoc
 hi def link rustCommentLineDocError Error
 hi def link rustCommentBlock  rustCommentLine
 hi def link rustCommentBlockDoc rustCommentLineDoc
+hi def link rustCommentBlockDocInner rustCommentBlockDoc
+hi def link rustCommentBlockDocOuter rustCommentBlockDoc
 hi def link rustCommentBlockDocStar rustCommentBlockDoc
 hi def link rustCommentBlockDocError Error
 hi def link rustCommentDocCodeFence rustCommentLineDoc
@@ -356,6 +363,8 @@ hi def link rustMacro         Macro
 hi def link rustType          Type
 hi def link rustTodo          Todo
 hi def link rustAttribute     PreProc
+hi def link rustAttributeInner rustAttribute
+hi def link rustAttributeOuter rustAttribute
 hi def link rustDerive        PreProc
 hi def link rustDefault       StorageClass
 hi def link rustStorage       StorageClass

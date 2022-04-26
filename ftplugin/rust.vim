@@ -78,13 +78,133 @@ if exists("g:AutoPairsLoaded") && !get(g:, 'rust_keep_autopairs_default', 0)
     let b:AutoPairs = {'(':')', '[':']', '{':'}','"':'"', '`':'`'}
 endif
 
-if has("folding") && get(g:, 'rust_fold', 0)
-    let b:rust_set_foldmethod=1
-    setlocal foldmethod=syntax
-    if g:rust_fold == 2
-        setlocal foldlevel<
-    else
-        setlocal foldlevel=99
+if has("folding")
+    " The number of curly braces we’re inside at the specified position.
+    function! s:BraceLevel(lnum, cnum) abort
+        let braces_level = 0
+        for id in synstack(a:lnum, a:cnum)
+            let name = synIDattr(id, "name")
+            if name ==# "rustFoldBraces"
+                let braces_level += 1
+            endif
+        endfor
+        return braces_level
+    endfunction
+
+    " [DISABLED: " Returns -1 for empty lines,]
+    " Returns 1 for outer attribute lines,
+    " Returns 0 for everything else.
+    function! s:IsOuterAttribute(lnum) abort
+        " The last character is a decent place to look. Not perfect, as there
+        " might be whitespace or a comment after, but close enough.
+        let last_char_col = col([a:lnum, "$"]) - 1
+        if last_char_col == 0
+            return 0  " -1
+        else
+        for id in synstack(a:lnum, last_char_col)
+            let name = synIDattr(id, "name")
+            if name ==# "rustCommentLineDocOuter" ||
+                    \ name ==# "rustCommentBlockDocOuter" ||
+                    \ name ==# "rustAttributeOuter"
+                return 1
+            endif
+        endfor
+        return 0
+    endfunction
+
+    " Returns:
+    "
+    " • [n, -1] for empty lines that aren’t inside an outer attribute.
+    " • [n, 1] for outer attribute lines for level n+1.
+    " • FIXME: [n, 0] for lines like `fn foo(` that don’t contain the
+    "   brace, but I’d rather like to detect such keywords and bump subsequent
+    "   lines until the brace to [n+1, 0].
+    " • [n+1, 0] for lines containing the brace of the next level,
+    "   including `fn foo() {`, `{`, and `}` provided it has no trailing
+    "   comment.
+    function! s:FoldInfo(lnum) abort
+        let attribute = s:IsOuterAttribute(a:lnum)
+        let start_level = s:BraceLevel(a:lnum, 1)
+        let end_level = s:BraceLevel(a:lnum, col([a:lnum, "$"]))
+        return [max([start_level, end_level]), attribute]
+    endfunction
+
+    " rustFoldBraces gives us a basic fold level, but we want to improve it to
+    " group attributes with the following item.
+    " • Is the first non-whitespace character on this line an outer attribute
+    "   (including doc comments)? Boost the level by one.
+    function! RustFold() abort
+        let [braces_level, attribute] = s:FoldInfo(v:lnum)
+        return braces_level + attribute
+    endfunction
+
+    function! RustFoldText() abort
+        let fs = v:foldstart
+        while fs <= v:foldend
+            let [braces_level, attribute] = s:FoldInfo(fs)
+            if braces_level == 0 || attribute
+                let fs = fs + 1
+                continue
+            endif
+            break
+        endwhile
+
+        " TODO: join lines until rustFoldBraces level increases.
+        " (But this will only be any use once I sort out keeping `fn foo(` on
+        " the same foldlevel as its matching `{`.)
+        if fs > v:foldend
+            " Undesirable, but currently possible on the likes of `fn foo(`
+            " where the brace is on a subsequent line.
+            let fs = v:foldstart
+        endif
+        let line = getline(fs)
+        if line =~# '{$'
+            if getline(nextnonblank(fs + 1)) =~# '^\s*}'
+                let line = line . '}'
+            else
+                let line = line . ' … }'
+            endif
+        endif
+
+        let width = winwidth(0) - &foldcolumn
+            \ - (&number ? max([4, float2nr(log10(line('$'))) + 2]) : 0)
+        if has("signs")
+            if &signcolumn ==# "auto" || &signcolumn ==# "yes"
+                let width = width - 2
+            endif
+        endif
+
+        if 1 " right-align the number-of-lines-in-fold suffix
+            let line = line . ' '
+            let suffix = ' ' . (v:foldend - v:foldstart + 1) . ' lines '
+            let suffix_width = strdisplaywidth(suffix)
+            let fill = repeat('-', width - strdisplaywidth(line) - suffix_width)
+            " FIXME: strcharpart is wrong if any character spans multiple
+            " columns (e.g. Tab, CJK, most emoji).
+            return strcharpart(line . fill, 0, width - suffix_width) . suffix
+        else " left-align suffix
+            let suffix = ' [' . (v:foldend - v:foldstart + 1) . ' lines] '
+            let suffix_width = strdisplaywidth(suffix)
+            if strdisplaywidth(line) + suffix_width > width
+                " FIXME: strcharpart is wrong and insufficient if any character
+                " spans multiple columns (e.g. Tab, CJK, most emoji), but I
+                " didn’t quite want to do the while-too-long-pop dance.
+                let line = strcharpart(line, 0, width - suffix_width - 2) . ' …'
+            endif
+            return line . suffix
+        endif
+    endfunction
+
+    if get(g:, 'rust_fold', 0)
+        let b:rust_set_foldmethod=1
+        setlocal foldmethod=syntax
+        setlocal foldexpr=RustFold()
+        setlocal foldtext=RustFoldText()
+        if g:rust_fold == 2
+            setlocal foldlevel<
+        else
+            setlocal foldlevel=99
+        endif
     endif
 endif
 
@@ -157,7 +277,7 @@ let b:undo_ftplugin = "
                 \|unlet! b:delimitMate_excluded_regions
             \|endif
             \|if exists('b:rust_set_foldmethod')
-                \|setlocal foldmethod< foldlevel<
+                \|setlocal foldmethod< foldexpr< foldtext< foldlevel<
                 \|unlet b:rust_set_foldmethod
             \|endif
             \|if exists('b:rust_set_conceallevel')
