@@ -266,12 +266,20 @@ if !exists("b:current_syntax_embed")
     let b:current_syntax_embed = 1
     syntax include @RustCodeInComment <sfile>:p:h/rust.vim
     unlet b:current_syntax_embed
+    unlet b:current_syntax
 
     " Currently regions marked as ```<some-other-syntax> will not get
     " highlighted at all. In the future, we can do as vim-markdown does and
     " highlight with the other syntax. But for now, let's make sure we find
     " the closing block marker, because the rules below won't catch it.
     syn region rustCommentLinesDocNonRustCode matchgroup=rustCommentDocCodeFence start='^\z(\s*//[!/]\s*```\).\+$' end='^\z1$' keepend contains=rustCommentLineDocInner,rustCommentLineDocOuter
+
+    " FIXME: tomlTable and tomlTableArray are ^-anchored, come up with some
+    " way around that.
+    silent! syntax include @RustTomlInComment syntax/toml.vim
+    silent! unlet b:current_syntax
+    syn region rustCommentLinesDocTomlCode matchgroup=rustCommentDocCodeFence start='^\z(\s*//[!/]\s*```\)[^A-Za-z0-9_-]*\%(\%(cargo\|toml\)\%([^A-Za-z0-9_-]\+\|$\)\)\+$' end='^\z1$' keepend contains=@RustTomlInComment,rustCommentLineDocLeader,tomlComment
+    syn region rustCommentBlockDocTomlCode matchgroup=rustCommentDocCodeFence start='^\z(\%(\s*\*\)\?\s*```\)[^A-Za-z0-9_-]*\%(\%(cargo\|toml\)\%([^A-Za-z0-9_-]\+\|$\)\)\+$' end='^\z1$' keepend contains=@RustTomlInComment,rustCommentBlockDocStar,tomlComment
 
     " We borrow the rules from rust’s src/librustdoc/html/markdown.rs, so that
     " we only highlight as Rust what it would perceive as Rust (almost; it’s
