@@ -69,7 +69,8 @@ syn match     rustIdentifier  "\%([^[:cntrl:][:space:][:punct:][:digit:]]\|_\)\%
 syn match     rustIdentifier  "r#\%([^[:cntrl:][:space:][:punct:][:digit:]]\|_\)\%([^[:cntrl:][:punct:][:space:]]\|_\)*" display
 syn match     rustFuncName    "\%(r#\)\=\%([^[:cntrl:][:space:][:punct:][:digit:]]\|_\)\%([^[:cntrl:][:punct:][:space:]]\|_\)*" display contained
 
-syn region rustMacroRepeat matchgroup=rustMacroRepeatDelimiters start="$(" end="),\=[*+]" contains=TOP
+syn region rustMacroRepeat matchgroup=rustMacroRepeatDelimiters start="$(" end=")" contains=TOP nextgroup=rustMacroRepeatCount
+syn match rustMacroRepeatCount ".\?[*+?]" contained
 syn match rustMacroVariable "$\w\+"
 syn match rustRawIdent "\<r#\h\w*" contains=NONE
 
@@ -303,6 +304,7 @@ hi def link rustBinNumber       rustNumber
 hi def link rustTrait           rustType
 hi def link rustDeriveTrait     rustTrait
 
+hi def link rustMacroRepeatCount   rustMacroRepeatDelimiters
 hi def link rustMacroRepeatDelimiters   Macro
 hi def link rustMacroVariable Define
 hi def link rustSigil         StorageClass
