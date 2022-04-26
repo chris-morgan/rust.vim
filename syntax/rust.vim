@@ -142,7 +142,6 @@ syn match     rustArrowCharacter display "->"
 syn match     rustQuestionMark display "?\([a-zA-Z]\+\)\@!"
 
 syn match     rustMacro       '\w\(\w\)*!' contains=rustAssert,rustPanic
-syn match     rustMacro       '#\w\(\w\)*' contains=rustAssert,rustPanic
 
 syn match     rustEscapeError   display contained /\\./
 syn match     rustEscape        display contained /\\\([nrt0\\'"]\|x\x\{2}\)/
